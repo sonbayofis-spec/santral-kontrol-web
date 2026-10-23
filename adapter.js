@@ -21,15 +21,15 @@
   function show(){
     if(ov)return;
     ov=document.createElement("div");
-    ov.style.cssText="position:fixed;inset:0;z-index:999;background:#FBF5EE;display:grid;place-items:center;padding:20px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;color:#2A1F17";
+    ov.style.cssText="position:fixed;inset:0;z-index:999;color-scheme:light;background:#FBF5EE;display:grid;place-items:center;padding:20px;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;color:#2A1F17";
     function render(){
       var t=TX[lang];
       ov.innerHTML='<form style="width:100%;max-width:380px;display:grid;gap:14px;background:#fff;border-radius:22px;padding:22px;box-shadow:0 6px 24px rgba(60,30,10,.15)">'
        +'<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">'+t.t+'</b>'
        +'<span><button type="button" data-l="tr" style="padding:6px 10px;border-radius:8px;border:2px solid #C2540E;background:'+(lang==="tr"?"#C2540E":"#fff")+';color:'+(lang==="tr"?"#fff":"#C2540E")+';font-weight:800">TR</button> '
        +'<button type="button" data-l="ro" style="padding:6px 10px;border-radius:8px;border:2px solid #C2540E;background:'+(lang==="ro"?"#C2540E":"#fff")+';color:'+(lang==="ro"?"#fff":"#C2540E")+';font-weight:800">RO</button></span></div>'
-       +'<label style="display:grid;gap:6px;font-weight:800">'+t.e+'<input name="e" type="email" autocomplete="username" required style="min-height:52px;border-radius:14px;border:2px solid #EADCCB;padding:10px 12px;font-size:17px"></label>'
-       +'<label style="display:grid;gap:6px;font-weight:800">'+t.p+'<input name="p" type="password" autocomplete="current-password" required style="min-height:52px;border-radius:14px;border:2px solid #EADCCB;padding:10px 12px;font-size:17px"></label>'
+       +'<label style="display:grid;gap:6px;font-weight:800">'+t.e+'<input name="e" type="email" autocomplete="username" required style="min-height:52px;border-radius:14px;border:2px solid #EADCCB;padding:10px 12px;font-size:17px;background:#fff;color:#2A1F17;-webkit-text-fill-color:#2A1F17;color-scheme:light"></label>'
+       +'<label style="display:grid;gap:6px;font-weight:800">'+t.p+'<input name="p" type="password" autocomplete="current-password" required style="min-height:52px;border-radius:14px;border:2px solid #EADCCB;padding:10px 12px;font-size:17px;background:#fff;color:#2A1F17;-webkit-text-fill-color:#2A1F17;color-scheme:light"></label>'
        +'<div id="skerr" style="color:#C23B3B;font-weight:700;min-height:20px"></div>'
        +'<button type="submit" style="min-height:58px;border-radius:16px;background:#C2540E;color:#fff;font-weight:900;font-size:19px">'+t.b+'</button></form>';
       ov.querySelectorAll("[data-l]").forEach(function(b){b.onclick=function(){lang=b.getAttribute("data-l");try{localStorage.setItem("sk.lang",lang)}catch(e){}render()}});
