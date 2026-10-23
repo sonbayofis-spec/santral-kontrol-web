@@ -1,0 +1,24 @@
+name: Rapor maili
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+concurrency:
+  group: rapor
+  cancel-in-progress: false
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: node scripts/report.js
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+          REPORT_SG: solaris.global.md@gmail.com
+          REPORT_OL: megasolarmd@gmail.com
