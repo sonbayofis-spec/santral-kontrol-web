@@ -534,6 +534,36 @@ function meter(c){
       el("span",null,el("i",{class:"dot",style:"background:var(--line)"}),L(UI.left)+" "+c.left)),
     el("div",{class:"bar"},el("i",{style:"width:"+(100*c.ok/tot)+"%;background:var(--ok)"}),el("i",{style:"width:"+(100*c.bad/tot)+"%;background:var(--bad)"})));
 }
+function reportText(d){
+  var its=itemsFor(freq).filter(function(i){return freq!=="d"||d.visited==="yes"||i.r});
+  var c=counts(freq,d),pl=periodLabel(freq,date);
+  var bad=its.filter(function(i){return d.items[i.id]==="issue"});
+  var left=its.filter(function(i){return !d.items[i.id]});
+  var fl={d:"Günlük",w:"Haftalık",m:"Aylık",y:"Yıllık"}[freq];
+  var t=[UI.pk[park]+" - "+fl+" kontrol raporu",pl.big+" "+pl.small,"Kontrolü yapan: "+d.signedName+" ("+fmtTime(d.signedAt)+")"];
+  if(freq==="d")t.push("Sahaya gidildi mi: "+(d.visited==="yes"?"Evet":d.visited==="no"?"Hayır (uzaktan kontrol)":"Belirtilmedi"));
+  t.push("Sonuç: "+c.ok+" tamam, "+c.bad+" sorun, "+c.left+" işaretlenmedi (toplam "+c.total+")");
+  if(bad.length){t.push("","SORUNLAR:");bad.forEach(function(i){t.push("- "+i.tr)})}
+  if(left.length&&left.length<=8){t.push("","İşaretlenmeyenler:");left.forEach(function(i){t.push("- "+i.tr)})}
+  else if(left.length)t.push("",left.length+" madde işaretlenmedi.");
+  if(d.note)t.push("","Not: "+d.note);
+  var o=openIncs();t.push("","Açık olay sayısı: "+o.length);
+  o.slice(0,5).forEach(function(i){t.push("- "+typeOf(i.type).tr+(i.place?" ("+i.place+")":"")+(i.desc?": "+i.desc.slice(0,100):""))});
+  return t.join("\n");
+}
+function reportCard(d){
+  var txt=reportText(d),to=(window.REPORT_TO||[]).join(",");
+  var card=el("div",{class:"card",style:"margin-top:12px"});
+  card.append(el("h3",{text:"Rapor",style:"margin:0 0 8px;font-size:19px"}),el("pre",{text:txt,style:"white-space:pre-wrap;font:inherit;font-size:15px;margin:0 0 12px"}));
+  card.append(el("button",{class:"primary",type:"button",text:"Raporu mail ile gönder",onclick:function(){
+    var sub=UI.pk[park]+" - kontrol raporu "+periodLabel(freq,date).big;
+    location.href="mailto:"+encodeURIComponent(to).replace(/%2C/g,",").replace(/%40/g,"@")+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(txt);
+  }}));
+  card.append(el("button",{type:"button",text:"Kopyala",style:"margin-top:8px;width:100%;min-height:48px;border-radius:14px;border:2px solid var(--line,#EADCCB);background:#fff;font-weight:800",onclick:function(ev){
+    var b=ev.target;try{navigator.clipboard.writeText(txt).then(function(){b.textContent="Kopyalandı"})}catch(e){}
+  }}));
+  return card;
+}
 function noteAndSign(d){
   var wrap=el("div",{class:"card"});
   var note=el("textarea",{id:"note",placeholder:L(UI.notePh),value:d.note||"",disabled:!canWrite||null,oninput:function(e){var v=e.target.value;edit(freq,function(x){x.note=v})}});
@@ -544,6 +574,7 @@ function noteAndSign(d){
   wrap.append(el("label",null,L(UI.note),note),el("label",null,L(UI.who),who));
   if(d.signedAt)wrap.append(el("div",{class:"signed",text:"✓ "+L(UI.signed)+": "+d.signedName+" · "+fmtTime(d.signedAt)}));
   wrap.append(btn);
+  if(d.signedAt)wrap.append(reportCard(d));
   return wrap;
 }
 function controlView(){
