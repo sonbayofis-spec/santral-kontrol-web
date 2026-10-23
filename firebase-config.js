@@ -7,3 +7,8 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "23361866510",
   appId: "1:23361866510:web:1b7737441e02ff8ef9e55f"
 };
+/* Rapor mailinin gideceği adresler (park başına). Boşsa mail alıcısız açılır. */
+window.REPORT_TO_MAP = {
+  sg: ["solaris.global.md@gmail.com"],
+  ol: ["megasolarmd@gmail.com"]
+};
