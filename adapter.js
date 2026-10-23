@@ -46,7 +46,7 @@
     auth.onAuthStateChanged(function(u){if(u){hide();res(u)}else{if(document.body)show();else document.addEventListener("DOMContentLoaded",show)}});
   });
   window.claude={use:async function(n){
-    if(n==="user"){var u=await signed;var em=(u.email||"").toLowerCase();var vo=(window.VIEW_ONLY||[]).map(function(x){return x.toLowerCase()});var ro=vo.indexOf(em)>=0;return {can:function(){return !ro},isOwner:function(){return false}}}
+    if(n==="user"){var u=await signed;var em=(u.email||"").toLowerCase();var vo=(window.VIEW_ONLY||[]).map(function(x){return x.toLowerCase()});var ro=vo.indexOf(em)>=0;return {can:function(){return !ro},isOwner:function(){return false},email:u.email||""}}
     if(n==="db"){await signed;return dbObj}
     return null;
   }};

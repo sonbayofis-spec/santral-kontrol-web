@@ -439,7 +439,7 @@ var UI={
 var FIXED_PARK="ol";
 var lang="tr",park=FIXED_PARK,tab="c",freq="d",date=iso(new Date());
 try{lang=localStorage.getItem("sk.lang")||"tr"}catch(e){}
-var logs=new Map(),pend=new Map(),incs=[],contacts="";
+var logs=new Map(),pend=new Map(),incs=[],contacts="";var guardMode=false;
 var db=null,canWrite=true,saveState="",statusTimer=null,deferred=false;
 var incForm={type:"",place:"",kwh:"",desc:"",src:"tech",at:"",photos:[]};var photoCache=new Map();
 
@@ -736,6 +736,48 @@ function histView(){
   });
   return out;
 }
+var gs={step:"",sent:false};
+function guardPhone(){var m=(contacts||"").match(/\+?\d[\d ()\-]{5,}\d/);return m?m[0].replace(/[^\d+]/g,""):""}
+function gBtn(txt,bg,fn,sub){
+  return el("button",{type:"button",onclick:fn,style:"width:100%;min-height:26vh;border-radius:26px;border:0;background:"+bg+";color:#fff;font-weight:900;font-size:30px;line-height:1.2;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.18)"},txt,sub?el("div",{text:sub,style:"font-size:18px;font-weight:700;margin-top:8px"}):null);
+}
+function gLink(txt,href,bg){
+  return el("a",{href:href,style:"display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;min-height:84px;padding:14px;line-height:1.2;border-radius:22px;background:"+bg+";color:#fff;font-weight:900;font-size:26px;text-decoration:none"},txt);
+}
+function simpleGuard(){
+  var wrap=el("div",{style:"padding:22px 16px 40px;display:grid;gap:18px;text-align:center;align-content:start;max-width:560px;margin:0 auto"});
+  var d=getDoc("g",keyFor("g",iso(new Date())));
+  wrap.append(el("div",{text:UI.pk[park],style:"font-weight:900;font-size:22px;color:var(--mute)"}),
+    el("h1",{text:"Tura de pază",style:"margin:0;font-size:36px"}),
+    el("div",{text:new Date().toLocaleDateString("ro-RO",{weekday:"long",day:"numeric",month:"long"}),style:"font-size:22px;font-weight:700"}));
+  var phone=guardPhone();
+  if(gs.step==="ok?"){
+    wrap.append(el("div",{text:"Ai verificat tot parcul și este totul în ordine?",style:"font-size:28px;font-weight:900"}),
+      gBtn("DA","#1F8A4C",function(){
+        date=iso(new Date());
+        edit("g",function(x){itemsFor("g").forEach(function(i){x.items[i.id]="ok"});x.signedName="Paznic";x.signedAt=Date.now()});
+        gs.step="";render()}),
+      gBtn("NU","#8A7B6E",function(){gs.step="";render()}));
+  }else if(gs.step==="prob?"){
+    wrap.append(el("div",{text:"Ai văzut o problemă în parc?",style:"font-size:28px;font-weight:900"}),
+      gBtn("DA, AM VĂZUT","#C23B3B",async function(){
+        if(db){try{await db.collection("incidents").add({photoIds:[],park:park,type:TYPES[TYPES.length-1].id,place:"",desc:"Bekçi 'sorun var' düğmesine bastı / Paznicul a apăsat „problemă”",kwh:0,at:new Date().toISOString(),src:"guard",status:"open",createdAt:Date.now()});gs.sent=true}catch(e){gs.sent=false}}
+        gs.step="sent";render()}),
+      gBtn("NU","#8A7B6E",function(){gs.step="";render()}));
+  }else if(gs.step==="sent"){
+    wrap.append(el("div",{text:gs.sent?"Problema a fost trimisă.":"Nu s-a putut trimite. Sună acum!",style:"font-size:28px;font-weight:900;color:#C23B3B"}),
+      el("div",{text:"Sună imediat responsabilul.",style:"font-size:24px;font-weight:700"}),
+      phone?gLink("SUNĂ ACUM","tel:"+phone,"#C2540E"):null,
+      gBtn("ÎNAPOI","#8A7B6E",function(){gs.step="";render()}));
+  }else{
+    if(d.signedAt)wrap.append(el("div",{text:"✔ Gata. Raportat la "+new Date(d.signedAt).toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"}),style:"background:#E3F4E8;color:#1F6B3B;border-radius:18px;padding:16px;font-size:24px;font-weight:900"}));
+    wrap.append(gBtn("TOTUL ESTE ÎN ORDINE","#1F8A4C",function(){gs.step="ok?";render()}),
+      gBtn("AM VĂZUT O PROBLEMĂ","#C23B3B",function(){gs.step="prob?";render()}));
+    if(phone)wrap.append(gLink("SUNĂ RESPONSABILUL","tel:"+phone,"#C2540E"));
+  }
+  wrap.append(gLink("URGENȚĂ 112","tel:112","#2A1F17"));
+  return wrap;
+}
 function navBar(){
   var defs=[["c","list"],["l","book"],["o","bell"],["g","shield"],["h","clock"]];
   return el("nav",null,defs.map(function(x){return el("button",{type:"button","aria-pressed":String(tab===x[0]),onclick:function(){tab=x[0];render();window.scrollTo(0,0)}},el("span",{html:SVG[x[1]],style:"display:block;width:26px;height:26px"}),el("span",{text:L(UI.nav[x[0]])}))}));
@@ -749,13 +791,14 @@ function mainContent(){
   else out=out.concat(histView());
   return out;
 }
-function renderBody(){var m=document.getElementById("main");if(!m)return render();var y=window.scrollY;m.textContent="";mainContent().forEach(function(n){if(n)m.append(n)});window.scrollTo(0,y);paintStatus()}
+function renderBody(){if(guardMode)return render();var m=document.getElementById("main");if(!m)return render();var y=window.scrollY;m.textContent="";mainContent().forEach(function(n){if(n)m.append(n)});window.scrollTo(0,y);paintStatus()}
 function render(){
   var ae=document.activeElement;
   if(ae&&/^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName)&&app.contains(ae)){deferred=true;return}
   deferred=false;
   document.documentElement.lang=lang;document.title=L(UI.app);
   app.textContent="";
+  if(guardMode){app.append(simpleGuard());return}
   var holder=document.createDocumentFragment();
   holder.append(header());
   var m=el("main",{id:"main"});mainContent().forEach(function(n){if(n)m.append(n)});
@@ -770,6 +813,7 @@ render();
   try{
     var usr=await (window.claude&&claude.use?claude.use("user"):null);
     if(usr){var cw=await usr.can("data.write");if(cw===false)canWrite=false}
+    if(usr&&usr.email&&usr.email.toLowerCase()===(window.GUARD_EMAIL||"security@santral.md")){guardMode=true;lang="ro"}
     db=await (window.claude&&claude.use?claude.use("db"):null);
   }catch(e){db=null}
   if(!db){render();return}
