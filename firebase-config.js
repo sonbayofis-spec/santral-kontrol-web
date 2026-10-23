@@ -12,3 +12,5 @@ window.REPORT_TO_MAP = {
   sg: ["solaris.global.md@gmail.com"],
   ol: ["megasolarmd@gmail.com"]
 };
+/* Sadece izleyenler (patron/ortak): işaretleme, imza ve olay kaydı kapalı, rapor ve liste açık. */
+window.VIEW_ONLY = ["muratsonbay@gmail.com"];
