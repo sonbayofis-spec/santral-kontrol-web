@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Olba SRL · Santral Kontrol</title>
+<meta name="theme-color" content="#C2540E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Olba">
+<link rel="manifest" href="manifest-olba.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: sticky hi-vis header, one task per screen, thumb-reach bottom navigation. */
+:root{
+  --bg:#FBF5EE; --card:#FFFFFF; --ink:#2A1F17; --mute:#6E5C4E; --line:#EADCCB;
+  --sun:#C2540E; --sun-ink:#FFFFFF;
+  --ok:#4C7D2E; --ok-bg:#E8F0DA; --bad:#C23B3B; --bad-bg:#FBE4E1; --warn-bg:#FCEFCF;
+  --focus:#D9A441; --nav:#FFFFFF;
+  --sans:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1A130E; --card:#271D15; --ink:#F6EDE3; --mute:#C7B2A0; --line:#4A3829; --sun:#8F3C0A; --sun-ink:#FFFFFF;
+  --ok:#5FD29A; --ok-bg:#12382B; --bad:#FF8F82; --bad-bg:#43211F; --warn-bg:#3F3410;
+  --focus:#7FB2FF; --nav:#20170F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A130E; --card:#271D15; --ink:#F6EDE3; --mute:#C7B2A0; --line:#4A3829; --sun:#8F3C0A; --sun-ink:#FFFFFF;
+  --ok:#5FD29A; --ok-bg:#12382B; --bad:#FF8F82; --bad-bg:#43211F; --warn-bg:#3F3410;
+  --focus:#7FB2FF; --nav:#20170F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.35;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 120px;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--sun);z-index:30}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto}
+.bleed{margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--sun);color:var(--sun-ink);padding-block:10px 12px;box-shadow:0 2px 6px rgba(60,30,10,.25)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-weight:900;font-size:19px;letter-spacing:.04em;text-transform:uppercase}
+.lang{display:flex;border:2px solid var(--sun-ink);border-radius:8px;overflow:hidden}
+.lang button{padding:6px 12px;font-weight:800;font-size:15px;color:var(--sun-ink)}
+.lang button[aria-pressed=true]{background:var(--sun-ink);color:var(--sun)}
+.parks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.parks button{min-height:52px;border-radius:10px;border:2px solid var(--sun-ink);font-weight:900;font-size:19px;color:var(--sun-ink);background:transparent}
+.parks button[aria-pressed=true]{background:var(--sun-ink);color:var(--sun)}
+main{padding-top:16px;display:flex;flex-direction:column;gap:16px}
+.alert{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--bad);color:#fff;border-radius:12px;padding:14px 16px;font-weight:800;font-size:18px}
+.alert small{display:block;font-weight:600;opacity:.92;font-size:15px}
+.note-banner{background:var(--warn-bg);border-radius:12px;padding:12px 14px;font-weight:600}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;background:var(--line);padding:5px;border-radius:12px}
+.seg button{min-height:46px;border-radius:9px;font-weight:800;color:var(--mute)}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.datebar{display:grid;grid-template-columns:56px 1fr 56px;gap:8px;align-items:stretch}
+.datebar button{min-height:56px;border-radius:12px;background:var(--card);border:2px solid var(--line);font-size:26px;font-weight:800}
+.datebar .now{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card);border-radius:12px;border:2px solid var(--line);padding:6px 8px;text-align:center}
+.datebar .now b{font-size:19px;text-transform:capitalize}
+.datebar .now span{font-family:var(--mono);font-size:13px;color:var(--mute)}
+.today{justify-self:center;font-weight:800;color:var(--focus);padding:6px 12px}
+.meter{background:var(--card);border-radius:14px;padding:14px 16px;display:grid;gap:10px}
+.meter .row{display:flex;gap:16px;flex-wrap:wrap;font-weight:800}
+.meter .row span{display:flex;align-items:center;gap:6px}
+.dot{width:14px;height:14px;border-radius:50%;display:inline-block}
+.bar{height:14px;border-radius:7px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.visit{display:grid;gap:8px}
+.visit h3,.sec h3,.card h3{margin:0;font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{min-height:56px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:800;font-size:18px;padding:8px 12px}
+.big[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:var(--card)}
+.sec{display:grid;gap:10px}
+.item{background:var(--card);border-radius:14px;padding:14px;display:grid;gap:12px;border:2px solid transparent}
+.item.ok{border-color:var(--ok)}
+.item.issue{border-color:var(--bad)}
+.item p{margin:0;font-size:18px;font-weight:600}
+.act{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.act button{min-height:54px;border-radius:12px;font-weight:900;font-size:18px;border:2px solid var(--line);background:var(--bg);color:var(--mute);display:flex;align-items:center;justify-content:center;gap:8px}
+.act .yes[aria-pressed=true]{background:var(--ok);border-color:var(--ok);color:#fff}
+.act .no[aria-pressed=true]{background:var(--bad);border-color:var(--bad);color:#fff}
+.item .rep{justify-self:start;font-weight:800;color:var(--bad);padding:4px 0}
+.card{background:var(--card);border-radius:14px;padding:16px;display:grid;gap:12px}
+label{font-weight:800;display:grid;gap:6px}
+input[type=text],input[type=number],input[type=datetime-local],textarea,select{width:100%;min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:10px 12px}
+textarea{min-height:100px;resize:vertical}
+.primary{min-height:60px;border-radius:14px;background:var(--ink);color:var(--card);font-weight:900;font-size:19px;padding:10px 16px}
+.primary:disabled{opacity:.4}
+.danger{background:var(--bad);color:#fff}
+.signed{background:var(--ok-bg);color:var(--ok);border-radius:12px;padding:12px 14px;font-weight:800}
+.status{position:fixed;left:0;right:0;bottom:calc(76px + env(safe-area-inset-bottom,0px));text-align:center;pointer-events:none;z-index:15}
+.status span{display:inline-block;background:var(--ink);color:var(--card);border-radius:20px;padding:6px 14px;font-weight:700;font-size:14px;opacity:.9}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--nav);border-top:2px solid var(--line);
+  padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));
+  display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+nav button{min-height:60px;min-width:0;border-radius:12px;font-weight:800;font-size:15px;display:grid;place-items:center;gap:2px;color:var(--mute);padding:4px}
+nav button svg{width:26px;height:26px}nav button span:last-child{font-size:13px}
+nav button[aria-pressed=true]{background:var(--sun);color:var(--sun-ink)}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.types button{min-height:76px;border-radius:14px;border:2px solid var(--line);background:var(--bg);font-weight:800;font-size:17px;padding:10px;text-align:left}
+.types button[aria-pressed=true]{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.hint{background:var(--warn-bg);border-radius:12px;padding:12px 14px;display:grid;gap:4px;font-weight:600}
+.hint b{font-weight:900}
+.inc{background:var(--card);border-radius:14px;padding:14px;display:grid;gap:8px;border:2px solid var(--line)}
+.inc.open{border-color:var(--bad)}
+.inc h4{margin:0;font-size:19px}
+.tag{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--mute)}
+.pill{display:inline-block;border-radius:20px;padding:3px 10px;font-weight:800;font-size:14px}
+.pill.open{background:var(--bad-bg);color:var(--bad)}
+.pill.closed{background:var(--ok-bg);color:var(--ok)}
+.hist{background:var(--card);border-radius:12px;padding:12px 14px;display:grid;gap:4px}
+.hist .h1{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+.mono{font-family:var(--mono);font-size:14px}
+.empty{padding:24px;text-align:center;color:var(--mute);font-weight:600}
+.guard-top{background:var(--bad);color:#fff;border-radius:16px;padding:18px;display:grid;gap:10px}
+.guard-top h2{margin:0;font-size:22px;font-weight:900}
+.guard-top button{min-height:64px;border-radius:14px;background:#fff;color:var(--bad);font-weight:900;font-size:20px}
+.badge{display:inline-grid;place-items:center;min-width:30px;height:26px;border-radius:7px;background:var(--ink);color:var(--card);font-family:var(--mono);font-weight:700;font-size:14px;padding:0 6px}
+.item .hd{display:flex;gap:10px;align-items:flex-start}
+.item .hd p{flex:1}
+.secnote{background:var(--warn-bg);border-radius:12px;padding:12px 14px;font-weight:600;font-size:16px}
+.kv{background:var(--card);border-radius:14px;overflow:hidden}
+.kv div{display:grid;gap:2px;padding:12px 14px;border-top:1px solid var(--line)}
+.kv div:first-child{border-top:0}
+.kv b{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.card p{margin:0}
+.card ul{margin:0;padding-left:20px;display:grid;gap:8px}
+.cal{display:grid;gap:0;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.cal div{display:grid;gap:2px;padding:10px 12px;border-top:1px solid var(--line)}
+.cal div:first-child{border-top:0}
+.cal b{font-size:15px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .25s}}
+
+/* Canva-style refinement: softer cards, tinted action buttons, rounded teal header */
+header{border-radius:0 0 22px 22px;padding-block:12px 16px;box-shadow:0 6px 16px rgba(60,30,10,.22)}
+.item,.card,.meter,.inc,.kv,.hist{border-radius:20px;box-shadow:0 2px 10px rgba(60,30,10,.07)}
+.item{padding:16px;border:2px solid transparent}
+.parks button{border-radius:14px;border:2px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12)}
+.parks button[aria-pressed=true]{border-color:#fff}
+.act button{border-radius:14px;min-height:58px;border-width:0}
+.act .yes{background:var(--ok-bg);color:var(--ok)}
+.act .no{background:var(--bad-bg);color:var(--bad)}
+.act .yes[aria-pressed=true]{background:var(--ok);color:#fff}
+.act .no[aria-pressed=true]{background:var(--bad);color:#fff}
+.seg{border-radius:16px}.seg button{border-radius:12px}
+nav{border-radius:22px 22px 0 0;box-shadow:0 -4px 16px rgba(60,30,10,.12);border-top:0}
+nav button{border-radius:14px}
+.primary{border-radius:16px;background:var(--sun);color:#fff}
+.guard-top{border-radius:22px}.guard-top button{border-radius:16px}
+.big,.types button,input[type=text],input[type=number],input[type=datetime-local],textarea,select{border-radius:14px}
+.badge{border-radius:9px;background:var(--sun)}
+.parks{grid-template-columns:1fr}.parkname{min-height:48px;display:grid;place-items:center;border-radius:14px;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.55);font-weight:700;font-size:21px;color:#fff;letter-spacing:.02em}
+
+/* compact Canva-like layout */
+body{font-size:16px}
+header{padding-block:10px 12px}
+.brand{display:grid;gap:0;text-transform:none;letter-spacing:0;line-height:1.15}
+.brand small{font-size:13px;font-weight:700;opacity:.85}
+.brand b{font-size:24px;font-weight:700}
+.lang button{padding:5px 11px;font-size:14px}
+.meter{padding:12px 14px}.bar{height:12px}
+.item{padding:14px;gap:10px}
+.item p{font-size:16px;font-weight:700;margin:0}
+.act button{min-height:50px;font-size:17px;border-radius:12px}
+.seg button{min-height:42px;font-size:15px}
+.datebar button,.datebar .now{min-height:50px}
+.visit h3,.sec h3{font-size:14px}
+.big{min-height:50px;font-size:16px}
+.seg{background:#F9E4D4}.seg button{color:#8F3C0A}.seg button[aria-pressed=true]{background:var(--sun);color:#fff;box-shadow:0 2px 6px rgba(143,60,10,.3)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg{background:#3A2416}:root:not([data-theme="light"]) .seg button{color:#F2B58C}}
+:root[data-theme="dark"] .seg{background:#3A2416}:root[data-theme="dark"] .seg button{color:#F2B58C}
+.visitbar{border-radius:14px;padding:12px 14px;font-weight:700;font-size:16px}.visitbar.ok{background:var(--ok-bg);color:var(--ok)}.visitbar.warn{background:var(--warn-bg);color:#8F5A0A}.visitbar.bad{background:var(--bad);color:#fff}
+.photos{display:flex;flex-wrap:wrap;gap:8px}.photobox{display:grid;gap:10px}.ph{position:relative}.ph img{width:96px;height:96px;object-fit:cover;border-radius:12px;display:block}.ph button{position:absolute;top:-6px;right:-6px;width:30px;height:30px;border-radius:50%;background:var(--bad);color:#fff;font-weight:900;font-size:18px;line-height:1}
+</style>
+</head><body>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>window.__PARK="ol";</script>
+<script src="adapter.js"></script>
+
+<div id="app" class="wrap"></div>
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+var S=function(tr,ro){return {tr:tr,ro:ro}};
+var pad=function(n){return String(n).padStart(2,"0")};
+var iso=function(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+var parse=function(s){var a=s.split("-").map(Number);return new Date(a[0],a[1]-1,a[2])};
+function isoWeek(d){var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);var y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return [t.getUTCFullYear(),Math.ceil(((t-y0)/864e5+1)/7)]}
+function keyFor(f,ds){var d=parse(ds);if(f==="d"||f==="g")return ds;if(f==="w"){var w=isoWeek(d);return w[0]+"-W"+pad(w[1])}if(f==="m")return d.getFullYear()+"-"+pad(d.getMonth()+1);return String(d.getFullYear())}
+function shift(f,ds,dir){var d=parse(ds);if(f==="d"||f==="g")d.setDate(d.getDate()+dir);else if(f==="w")d.setDate(d.getDate()+7*dir);else if(f==="m")d.setMonth(d.getMonth()+dir,1);else d.setFullYear(d.getFullYear()+dir,0,1);return iso(d)}
+function el(tag,props){var e=document.createElement(tag);props=props||{};Object.keys(props).forEach(function(k){var v=props[k];if(v==null||v===false)return;if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k==="html")e.innerHTML=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);else if(k==="value")e.value=v;else e.setAttribute(k,v===true?"":v)});for(var i=2;i<arguments.length;i++){var c=arguments[i];if(c==null||c===false)continue;if(Array.isArray(c))c.forEach(function(x){if(x)e.append(x)});else e.append(c)}return e}
+var SVG={
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10M12 19v.5"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 9l1.5 1.5L12 8M8 15l1.5 1.5L12 14M14.5 9.5H17M14.5 15.5H17"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h10a3 3 0 013 3V20H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h10M9 8.5h5"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/></svg>'
+};
+
+/* ---------- content ---------- */
+var SEC={
+  saf:S("İş güvenliği","Securitate"),
+  tour:S("Saha turu","Tur în parc"),
+  per:S("Çit, kapı, kamera","Gard, poartă, camere"),
+  pv:S("Paneller","Panouri"),
+  dc:S("DC taraf","Partea DC"),
+  inv:S("İnvertörler","Invertoare"),
+  ac:S("AC, trafo, şebeke","AC, transformator, rețea"),
+  mon:S("İzleme ve veri","Monitorizare și date"),
+  rev:S("Sayaç ve gelir","Contor și venit"),
+  sg:S("Park donanımına özgü","Specific echipamentului parcului"),
+  gd:S("Bekçi turu","Tura paznicului")
+};
+var ORDER=["saf","tour","per","pv","dc","inv","ac","mon","rev","sg"];
+/* [id, freq, section, park('' = both), remote(d only), tr, ro] */
+var ITEMS=[
+["saf1","d","saf","",0,"KKD takılı: baret, yalıtımlı iş ayakkabısı, eldiven, gözlük","Echipament de protecție purtat: cască, încălțăminte electroizolantă, mănuși, ochelari"],
+["saf2","d","saf","",0,"Giriş saati forma yazıldı; yalnızsan sorumluya “sahadayım” mesajı gitti","Ora de intrare notată; dacă ești singur, ai anunțat responsabilul că ești pe teren"],
+["saf3","d","saf","",0,"Telefon şarjlı, acil durum numaraları elinde","Telefon încărcat, numerele de urgență la îndemână"],
+["saf4","d","saf","",0,"Yangın söndürücüler yerinde, manometre yeşilde, mühür sağlam","Stingătoare la locul lor, manometru în zona verde, sigiliu intact"],
+["saf5","d","saf","",0,"Tanımadığın kişi veya araç sahaya alınmadı, sorumluya bildirildi","Persoane sau vehicule necunoscute nu au intrat; responsabilul a fost anunțat"],
+["saf6","d","saf","",0,"Fırtına, yıldırım veya aşırı sıcakta açık alan ve pano işleri ertelendi","La furtună, fulgere sau caniculă lucrările în aer liber și la tablouri au fost amânate"],
+["tour1","d","mon","",1,"İzleme sisteminde tüm invertörler çevrimiçi; sıfır üretimde veya hatada olan yok","În monitorizare toate invertoarele sunt online; niciunul fără producție sau în eroare"],
+["tour3","d","mon","",1,"Aktif alarm ve hata listesi okundu, yeni alarmlar forma yazıldı","Lista de alarme și erori citită; alarmele noi au fost notate"],
+["tour4","d","mon","",1,"Şebeke bağlantısı, sayaç ve haberleşme (internet/GSM) kopuksuz","Conexiunea la rețea, contorul și comunicația (internet/GSM) fără întreruperi"],
+["mon1","d","mon","",1,"Veri kaydedici ve haberleşme ağı çalışıyor, veri akışında boşluk yok","Datalogger-ul și rețeaua de comunicație funcționează, fără goluri în date"],
+["mon2","d","mon","",1,"Hava istasyonu verileri (ışınım, sıcaklık, rüzgâr) mantıklı; sensör sıfırda veya sabit değil","Datele stației meteo (iradiere, temperatură, vânt) sunt plauzibile; senzorul nu e blocat"],
+["inv1","d","inv","",1,"Her invertör “çalışıyor” durumunda; hata kodu veya kırmızı LED yok","Fiecare invertor este „în funcțiune”; fără cod de eroare sau LED roșu"],
+["inv2","d","inv","",1,"Anlık güç komşu invertörlerle kıyaslandı; belirgin sapma forma yazıldı","Puterea instantanee comparată cu invertoarele vecine; abaterile mari au fost notate"],
+["sg1","d","sg","",1,"1 numaralı invertörün 90 kW sınırı etkin; toplam çıkış öğlen 990 kW'ı aşmıyor","Limita de 90 kW a invertorului 1 este activă; producția totală la prânz nu depășește 990 kW"],
+["sg2","d","sg","",1,"KNS12 kontrolör ve iRZ router ışıkları normal; SCADA'ya veri gidiyor","LED-urile controlerului KNS12 și routerului iRZ sunt normale; datele ajung în SCADA"],
+["tour5","d","tour","",0,"Gece fırtına, dolu veya kar olduysa paneller, çit ve yollar yeniden kontrol edildi","După furtună, grindină sau zăpadă din noapte, panourile, gardul și drumurile au fost reverificate"],
+["tour6","d","tour","",0,"Yanık veya plastik kokusu, duman, çıtırtı, anormal ses yok","Fără miros de ars/plastic, fum, pocnituri sau zgomote anormale"],
+["per1","d","per","",0,"Çit sağlam: kesik tel, kazılmış alt kısım, devrik direk yok","Gardul este intact: fără sârmă tăiată, săpături pe sub gard sau stâlpi căzuți"],
+["per2","d","per","",0,"Giriş kapısı kapalı ve kilitli, anahtar kayıtlı","Poarta este închisă și încuiată, cheia este înregistrată"],
+["per3","d","per","",0,"Kameralar görüntü veriyor, kayıt cihazı çalışıyor, saat doğru","Camerele transmit imagine, înregistratorul funcționează, ora este corectă"],
+["inv3","d","inv","",0,"Kabin dışında aşırı ısınma, yanık kokusu veya anormal ses yok","În afara carcasei: fără supraîncălzire, miros de ars sau zgomote anormale"],
+["ac1","d","ac","",0,"AG/OG pano ve trafo odası kapıları kilitli, yetkisiz giriş izi yok","Ușile tablourilor JT/MT și camerei transformatorului sunt încuiate, fără urme de acces neautorizat"],
+["ac2","d","ac","",0,"Trafoda yağ sızıntısı, aşırı ısınma, uğultu veya koku yok","Transformator: fără scurgeri de ulei, supraîncălzire, zumzet sau miros"],
+["ac3","d","ac","",0,"Koruma rölesi ekranında alarm veya açma (trip) yok","Releul de protecție nu afișează alarmă sau declanșare"],
+["sg3","d","sg","",0,"KTPN-1K 0,4 kV panoda ana şalter ve QF001–QF010 normal, açmış şalter yok","În tabloul 0,4 kV al KTPN-1K întreruptorul general și QF001–QF010 sunt normale, niciunul declanșat"],
+
+["saf7","w","saf","",0,"Acil çıkış yolları ve toplanma noktası boş, levhalar okunuyor","Căile de evacuare și punctul de adunare sunt libere, indicatoarele lizibile"],
+["saf8","w","saf","",0,"Elektrik tehlike levhaları yerinde ve okunaklı","Plăcuțele de pericol electric sunt la locul lor și lizibile"],
+["per4","w","per","",0,"Kamera mercekleri temiz, gece görüşü (IR) çalışıyor","Lentilele camerelor sunt curate, viziunea de noapte (IR) funcționează"],
+["per5","w","per","",0,"Saha ve pano aydınlatması geceleyin çalışıyor, yanmayan lamba işaretlendi","Iluminatul din parc și de la tablouri funcționează noaptea; becurile arse au fost marcate"],
+["per6","w","per","",0,"Alarm sistemi ve hareket sensörleri test edildi","Sistemul de alarmă și senzorii de mișcare au fost testați"],
+["pv1","w","pv","",0,"Panellerde kırık cam, delaminasyon, kabarma veya sararma yok","Panourile nu au sticlă spartă, delaminare, umflături sau îngălbenire"],
+["pv2","w","pv","",0,"Hücrede yanık, kararma, snail trail veya renk farkı yok; varsa konum ve fotoğraf not edildi","Fără celule arse, înnegrite, urme de melc sau diferențe de culoare; dacă există, poziția și fotografia au fost notate"],
+["pv3","w","pv","",0,"Yeni gölgelenme yok: büyüyen ağaç/çalı, direk, panele düşen nesne","Fără umbrire nouă: arbori/tufe crescute, stâlpi, obiecte căzute pe panouri"],
+["dc1","w","dc","",0,"DC kablolarda ezik, kemirgen yeniği, soyulma veya sarkma yok","Cablurile DC nu au zdrobiri, rosături de rozătoare, decojiri sau lăsări"],
+["dc2","w","dc","",0,"MC4 konnektörlerde ısınma, erime veya renk değişimi yok","Conectorii MC4 nu au urme de încălzire, topire sau schimbare de culoare"],
+["inv4","w","inv","",0,"Havalandırma girişleri açık; yaprak, toz, böcek veya kuş yuvası yok","Orificiile de ventilație sunt libere; fără frunze, praf, insecte sau cuiburi"],
+["inv5","w","inv","",0,"Fanlar çalışıyor, ses ve titreşim normal","Ventilatoarele funcționează, zgomotul și vibrațiile sunt normale"],
+["ac4","w","ac","",0,"Sayaç çalışıyor, ekran okunuyor ve normal görünüyor","Contorul funcționează, afișajul e lizibil și arată normal"],
+["ac5","w","ac","",0,"Pano içi ve kablo girişlerinde nem, su, kemirgen izi veya böcek yok","În tablouri și la intrările de cabluri: fără umezeală, apă, urme de rozătoare sau insecte"],
+["rev2","w","rev","",0,"Sayaç kabininin plombası sağlam","Sigiliul dulapului contorului este intact"],
+["sg4","w","sg","",0,"10 DDCC dolabının hepsi kapalı, kilitli; içeri su veya böcek girmemiş","Toate cele 10 dulapuri DDCC sunt închise, încuiate, fără apă sau insecte"],
+["sg5","w","sg","",0,"Panel sıraları arası kablo hendeklerinde çökme, su yıkaması veya kazı izi yok (yağmurdan sonra mutlaka)","Șanțurile de cabluri dintre rânduri nu au surpări, spălări sau săpături (obligatoriu după ploaie)"],
+
+["per7","m","per","",0,"Panel sıraları arası ve invertör/trafo çevresi otlar kesildi (yazın 2 haftada bir)","Iarba dintre rânduri și din jurul invertoarelor/transformatorului tăiată (vara la 2 săptămâni)"],
+["per8","m","per","",0,"Saha içi yollar ve su kanalları açık; çökme veya su birikmesi yok","Drumurile și canalele de apă din parc sunt libere; fără surpări sau băltiri"],
+["per9","m","per","",0,"Giriş ve uyarı levhaları yerinde","Indicatoarele de la intrare și de avertizare sunt la locul lor"],
+["pv4","m","pv","",0,"Kirlilik, kuş pisliği, toz ve kar değerlendirildi; belirgin üretim kaybı varsa temizlik planlandı","Murdăria, excrementele, praful și zăpada evaluate; la pierderi mari s-a planificat curățarea"],
+["pv5","m","pv","",0,"Çerçeve ve montaj profillerinde korozyon, pas veya deformasyon yok","Rame și profile fără coroziune, rugină sau deformări"],
+["pv6","m","pv","",0,"Cıvata, kelepçe ve tutucularda gevşeme veya düşme yok","Șuruburi, cleme și suporți fără slăbiri sau căderi"],
+["pv7","m","pv","",0,"Montaj yapısı altında toprak kayması, erozyon veya su birikmesi yok","Sub structuri: fără alunecări de teren, eroziune sau băltiri"],
+["dc3","m","dc","",0,"String kutuları/DDCC dolaplarında conta sağlam; su, toz, yanık kokusu yok","Cutiile de string/dulapurile DDCC au garnituri intacte; fără apă, praf sau miros de ars"],
+["dc4","m","dc","",0,"String sigortaları sağlam; atmış olan varsa nedeni yazıldı","Siguranțele de string sunt întregi; la cele arse, cauza a fost notată"],
+["dc5","m","dc","",0,"Aşırı gerilim koruma (SPD) göstergeleri yeşil","Indicatoarele protecției la supratensiune (SPD) sunt verzi"],
+["dc6","m","dc","",0,"Topraklama ve eşpotansiyel bağlantılar sağlam, paslanmamış","Legăturile la pământ și de echipotențializare sunt întregi, fără coroziune"],
+["inv6","m","inv","",0,"Kabin kapakları, contalar ve kilitler sağlam; içeri nem girmemiş","Capacele, garniturile și încuietorile carcasei sunt intacte; fără umezeală"],
+["inv7","m","inv","",0,"Toz filtreleri temizlendi veya değiştirildi (üretici aralığına göre)","Filtrele de praf curățate sau schimbate (conform intervalului producătorului)"],
+["inv8","m","inv","",1,"Hata kaydı (event log) incelendi; tekrar eden hatalar yazıldı","Jurnalul de evenimente verificat; erorile repetate au fost notate"],
+["ac6","m","ac","",0,"Kablo bağlantı noktalarında ısınma izi veya gevşeklik gözle kontrol edildi","Punctele de conectare a cablurilor verificate vizual pentru urme de încălzire sau slăbiri"],
+["ac7","m","ac","",0,"Topraklama ve yıldırımlık bağlantıları sağlam","Legăturile la pământ și paratrăsnet sunt întregi"],
+["sg6","m","sg","",0,"Trafo istasyonundan 46/1 direğine ≈620 m kablo güzergâhında yeni kazı, tarla sürümü veya çökme yok","Pe traseul cablului de ≈620 m spre stâlpul 46/1: fără săpături noi, arături sau surpări"],
+["sg7","m","sg","",0,"46/1 direği, CUT-OUT ve izolatörler yerden gözle kontrol edildi (yaklaşılmaz, çıkılmaz)","Stâlpul 46/1, CUT-OUT-ul și izolatoarele verificate vizual de la sol (fără apropiere sau urcare)"],
+["sg8","m","sg","",0,"Kışın panel önünde ve havalandırmada buz/kar birikimi kontrol edildi","Iarna: gheața/zăpada de pe panouri și de la ventilație verificată"],
+
+["saf9","y","saf","",0,"İş güvenliği eğitimi ve yüksekte/elektrikte çalışma belgeleri geçerli","Instruirea de securitate și atestatele pentru lucru la înălțime/electric sunt valabile"],
+["per10","y","per","",0,"Çit, direkler ve kapı menteşeleri tam kontrol edildi; onarım listesi çıkarıldı","Gardul, stâlpii și balamalele verificate complet; lista de reparații întocmită"],
+["pv8","y","pv","",0,"Termal kamera/dron ile hot spot taraması yapıldı; sonuçlar sıra bazında kaydedildi","Scanare termică (cameră/dronă) pentru puncte fierbinți efectuată; rezultate înregistrate pe rânduri"],
+["pv9","y","pv","",0,"Paneller profesyonelce temizlendi (sert fırça, aşındırıcı kimyasal, sıcak panele soğuk su yok)","Panourile curățate profesional (fără perii dure, chimicale abrazive sau apă rece pe panou fierbinte)"],
+["dc7","y","dc","",0,"String akımları ve açık devre gerilimleri ölçüldü; sapan string işaretlendi","Curenții de string și tensiunile în gol măsurate; stringurile cu abateri marcate"],
+["dc8","y","dc","",0,"Yalıtım ve topraklama direnci ölçümleri yetkili kişi tarafından yapıldı, rapor dosyalandı","Rezistența de izolație și de legare la pământ măsurate de persoană autorizată; raport arhivat"],
+["inv9","y","inv","",0,"Yazılım (firmware) kontrol edildi; güncelleme yetkili kişi/servis tarafından yapıldı","Firmware verificat; actualizarea făcută de persoană autorizată/service"],
+["inv10","y","inv","",0,"Üretici servisi yıllık bakım ve bağlantı torku kontrolünü yaptı","Service-ul producătorului a făcut mentenanța anuală și verificarea cuplului de strângere"],
+["ac8","y","ac","",0,"Koruma röleleri, şalterler ve topraklama direnci testleri yetkili kuruluşça yapıldı, raporlar dosyalandı","Releele, întreruptoarele și rezistența de legare la pământ testate de o entitate autorizată; rapoarte arhivate"],
+["ac9","y","ac","",0,"Trafo yağ analizi ve şebeke işletmecisine verilecek periyodik belgeler tamamlandı","Analiza uleiului transformatorului și documentele periodice pentru operatorul de rețea finalizate"],
+["mon7","y","mon","",0,"Hava istasyonu sensörleri temizlendi, kalibrasyon ihtiyacı değerlendirildi","Senzorii stației meteo curățați; necesitatea calibrării evaluată"],
+
+["g1","g","gd","",0,"Giriş kapısı kapalı ve kilitli","Poarta de intrare este închisă și încuiată"],
+["g2","g","gd","",0,"Çit sağlam, kesik veya kazılmış yer yok","Gardul este intact, fără tăieturi sau locuri săpate"],
+["g3","g","gd","",0,"Aydınlatma yanıyor, kameralar çalışıyor","Iluminatul funcționează, camerele funcționează"],
+["g4","g","gd","",0,"Duman, yanık kokusu, kıvılcım veya anormal ses yok","Fără fum, miros de ars, scântei sau zgomote anormale"],
+["g5","g","gd","",0,"Sahada yabancı kişi veya araç yok","Nu sunt persoane sau vehicule străine în parc"]
+].map(function(a){return {id:a[0],f:a[1],s:a[2],p:a[3],r:a[4],tr:a[5],ro:a[6]}});
+
+var TYPES=[
+ {id:"fire",tr:"Yangın, duman, yanık kokusu",ro:"Incendiu, fum, miros de ars",
+  do:S("Sahadan uzaklaş, acil servisi ara, enerjiyi kesmeye çalışma.","Părăsește zona, sună serviciul de urgență, nu încerca să tai energia."),
+  who:S("112, ardından sorumlu","112, apoi responsabilul")},
+ {id:"shock",tr:"Elektrik çarpması, yaralanma",ro:"Electrocutare, accidentare",
+  do:S("İlk yardım yap, 112'yi ara, tehlike geçmeden kazazedeyi taşıma.","Acordă prim ajutor, sună 112, nu muta victima cât timp pericolul persistă."),
+  who:S("112, ardından sorumlu","112, apoi responsabilul")},
+ {id:"theft",tr:"Çit kesilmesi, hırsızlık, yabancı kişi",ro:"Gard tăiat, furt, persoane străine",
+  do:S("Müdahale etme; uzaktan fotoğraf çek, saati yaz.","Nu interveni; fotografiază de la distanță și notează ora."),
+  who:S("Sorumlu ve polis","Responsabilul și poliția")},
+ {id:"damage",tr:"Panel veya kablo hasarı",ro:"Panou sau cablu deteriorat",
+  do:S("Alanı işaretle, yaklaşma, fotoğraf çek.","Marchează zona, nu te apropia, fă fotografii."),
+  who:S("Sorumlu","Responsabilul")},
+ {id:"inv",tr:"İnvertör hatası, üretim durdu",ro:"Eroare invertor, producție oprită",
+  do:S("Hata kodunu ve saati yaz; resetlemeden önce haber ver.","Notează codul de eroare și ora; anunță înainte de resetare."),
+  who:S("Sorumlu, gerekirse üretici servisi","Responsabilul, la nevoie service-ul producătorului")},
+ {id:"grid",tr:"Trafo/röle alarmı, şebeke kesintisi",ro:"Alarmă transformator/releu, întrerupere rețea",
+  do:S("Enerjilendirme yapma, panoya dokunma.","Nu energiza, nu atinge tabloul."),
+  who:S("Sorumlu ve şebeke işletmecisi (Premier Energy Distribution)","Responsabilul și operatorul de rețea (Premier Energy Distribution)")},
+ {id:"comm",tr:"Haberleşme veya kamera kaybı",ro:"Pierdere comunicație sau cameră",
+  do:S("Bağlantıyı kontrol et; düzelmezse saatini yaz.","Verifică conexiunea; dacă nu se rezolvă, notează ora."),
+  who:S("Sorumlu","Responsabilul")},
+ {id:"other",tr:"Diğer",ro:"Altele",
+  do:S("Ne gördüğünü kısaca yaz.","Descrie pe scurt ce ai observat."),
+  who:S("Sorumlu","Responsabilul")}
+];
+
+
+var SECNOTE={
+ saf:S("Güneş panelleri ışık oldukça gerilim üretir. İnvertör kapalı olsa bile DC kablolar tehlikelidir; DC tarafında çalışmadan önce üretimin kesildiğini ve sorumlunun izin verdiğini teyit et.","Panourile produc tensiune cât timp există lumină. Chiar cu invertorul oprit, cablurile DC sunt periculoase; înainte de lucrări pe partea DC confirmă că producția este oprită și că responsabilul a dat acordul."),
+ tour:S("Üretim düşüşünde önce havaya bak: bulutlu günde düşük üretim normaldir. Güneşli saatte yan yana iki invertör arasında belirgin fark varsa sorun sahadadır.","La scăderea producției verifică întâi vremea: într-o zi noroasă producția mică e normală. Dacă la soare două invertoare vecine diferă mult, problema este în parc."),
+ per:S("Kuru ot yangın riskidir; yazın otları sık kes.","Iarba uscată este risc de incendiu; vara taie iarba des."),
+ pv:S("Panellerin üstüne basılmaz. Temizlik sabah erken veya akşam yapılır; öğle sıcağında soğuk su camı çatlatabilir.","Nu se calcă pe panouri. Curățarea se face dimineața devreme sau seara; apa rece la prânz poate crăpa sticla."),
+ dc:S("Gerilim ve akım ölçümünü yalnızca yetkili ve uygun donanımlı kişi yapar. Yeni teknisyen bu işlerde ilk dönem gözlemcidir.","Măsurătorile de tensiune și curent le face doar persoana autorizată, cu echipament potrivit. Noul tehnician este inițial doar observator."),
+ inv:S("Kabinin içine ve DC/AC bağlantılara yalnızca yetkili kişi, enerji kesildikten ve bekleme süresi geçtikten sonra müdahale eder. Hata kodunu sıfırlamadan önce kodu ve saati kaydet.","În carcasă și la conexiunile DC/AC intervine doar persoana autorizată, după deconectare și după timpul de așteptare. Înainte de resetare notează codul de eroare și ora."),
+ ac:S("Teknisyen bu bölümde yalnızca dışarıdan gözlem yapar. Koruma rölesi açtıysa veya trafo alarm veriyorsa kendi başına enerjilendirme yapma, sorumluya haber ver.","Aici tehnicianul doar observă din exterior. Dacă releul a declanșat sau transformatorul dă alarmă, nu reenergiza singur; anunță responsabilul."),
+ mon:S("Güneşli, açık günde iki aynı invertör arasında %5'ten fazla fark varsa sahaya bak; bulut geçişi değil, kirlilik, gölge, sigorta veya konnektör sorunudur.","Dacă într-o zi senină două invertoare identice diferă cu peste 5%, verifică în parc; nu e de la nori, ci de la murdărie, umbră, siguranță sau conector."),
+ rev:S("Satış sayacının plombasına ve kabinine kimse dokunmaz.","Nimeni nu atinge sigiliul și dulapul contorului de vânzare."),
+ sg:S("10 kV kesici, koruma rölesi ayarları, CUT-OUT ve 46/1 direği çalışmaları yalnızca yetkili elektrik personelince, Premier Energy Distribution ile koordinasyonla yapılır. Teknisyen bu kısımlarda gözler ve bildirir.","Lucrările la întreruptorul de 10 kV, setările releului, CUT-OUT și stâlpul 46/1 le fac doar electricienii autorizați, în coordonare cu Premier Energy Distribution. Tehnicianul doar observă și raportează.")
+};
+var FBADGE={tr:{d:"G",w:"H",m:"A",y:"Y"},ro:{d:"Z",w:"S",m:"L",y:"A"}};
+var INFO=[
+ [S("Konum","Locație"),S("Izbiște köyü, Criuleni ilçesi (47,2249 K / 28,9585 D)","Satul Izbiște, raionul Criuleni (47,2249 N / 28,9585 E)")],
+ [S("Güç","Putere"),S("990 kW kurulu, 990 kW sözleşmeli bağlantı gücü","990 kW instalat, 990 kW putere contractată")],
+ [S("Paneller","Panouri"),S("2.364 adet, 550 W (TD7G72M), yaklaşık 19.200 m², 15 sıra (R1–R15), sabit metal konstrüksiyon (SMS-212, masada 18 panel)","2.364 bucăți, 550 W (TD7G72M), aprox. 19.200 m², 15 rânduri (R1–R15), structuri metalice fixe (SMS-212, 18 panouri pe masă)")],
+ [S("İnvertörler","Invertoare"),S("10 adet Huawei SUN2000-100KTL-M1. 1 numaralı invertörün AC çıkışı yazılımla 90 kW'a sınırlı (9 × 100 + 90 = 990 kW)","10 invertoare Huawei SUN2000-100KTL-M1. Ieșirea AC a invertorului 1 este limitată prin software la 90 kW (9 × 100 + 90 = 990 kW)")],
+ [S("DC taraf","Partea DC"),S("Her invertörün yanında bir DC dağıtım dolabı (DDCC-1…10). DC kablolar PVC Ø63 boruda, hendekte, kum yatağında, en az 0,7 m derinlikte","Lângă fiecare invertor un dulap de distribuție DC (DDCC-1…10). Cablurile DC în țevi PVC Ø63, în șanț, pe pat de nisip, la minimum 0,7 m adâncime")],
+ [S("AC taraf","Partea AC"),S("İnvertörlerden KTPN-1K'ya NA2XY 3×120+1×70 mm² kablo (40–160 m). 0,4 kV panoda QF001–QF010 (NSX250N, 200 A), ana şalter MasterPact NW 2000 A, QF011 yedek hat","De la invertoare la KTPN-1K cablu NA2XY 3×120+1×70 mm² (40–160 m). În tabloul 0,4 kV: QF001–QF010 (NSX250N, 200 A), întreruptor general MasterPact NW 2000 A, QF011 linie de rezervă")],
+ [S("Trafo istasyonu","Stația de transformare"),S("KTPN-1K, 1250 kVA, 10/0,4 kV. 10 kV hücrede kesici, RZL-05 koruma rölesi, akım ve gerilim trafoları","KTPN-1K, 1250 kVA, 10/0,4 kV. În celula de 10 kV: întreruptor, releu de protecție RZL-05, transformatoare de curent și tensiune")],
+ [S("10 kV bağlantı","Racord 10 kV"),S("Hîrtopul Mare 35/10 kV trafo merkezinden gelen hatta 46 numaralı direk. 46/1 direğinde CUT-OUT ve parafudr, oradan yaklaşık 620 m yeraltı kablosuyla istasyona","Pe linia de la stația Hîrtopul Mare 35/10 kV, stâlpul nr. 46. La stâlpul 46/1 sunt CUT-OUT și descărcător, de unde un cablu subteran de aprox. 620 m ajunge la stație")],
+ [S("Sayaç","Contor"),S("ZMD405CT, istasyonun dış duvarındaki BZUM-TF-01-63 kabininde, plombalı","ZMD405CT, în dulapul BZUM-TF-01-63 de pe peretele exterior al stației, sigilat")],
+ [S("Telemetri","Telemetrie"),S("PLA34 güç analizörü, KNS12 kontrolör, iRZ router (GSM). IEC 60870-5-104 ile Premier Energy Distribution SCADA'ya veri gider, kesiciye uzaktan aç/kapa komutu verilebilir","Analizor PLA34, controler KNS12, router iRZ (GSM). Datele merg prin IEC 60870-5-104 în SCADA Premier Energy Distribution, iar întreruptorul poate fi comandat de la distanță")],
+ [S("İzleme","Monitorizare"),S("SmartLogger 3000A, RS-485 hattı, on-line UPS, LTE router","SmartLogger 3000A, linie RS-485, UPS on-line, router LTE")],
+ [S("Topraklama","Legare la pământ"),S("Ø10 mm çelik yatay elektrot hendekte, FeZn 40×4 mm şerit, her konstrüksiyon sırası topraklı","Electrod orizontal din oțel Ø10 mm în șanț, bandă FeZn 40×4 mm, fiecare rând de structuri legat la pământ")],
+ [S("İklim ve zemin","Climă și sol"),S("Kışın −14 °C'ye kadar, yazın +34 °C. Tasarım rüzgârı 32 m/s, buzlanma 25 mm, toprak donma derinliği 0,6–0,8 m","Iarna până la −14 °C, vara +34 °C. Vânt de calcul 32 m/s, chiciură 25 mm, adâncimea de îngheț 0,6–0,8 m")]
+];
+var CAL=[
+ [S("Günlük","Zilnic"),S("İzleme ekranı, alarmlar, invertör durumu, saha turu, çit/kapı/kamera, günlük form","Monitorizare, alarme, starea invertoarelor, tur în parc, gard/poartă/camere, formular zilnic"),S("Teknisyen, bekçi turu","Tehnician, tura paznicului")],
+ [S("Haftalık","Săptămânal"),S("Panelleri gözle kontrol, DC kablo ve konnektör, havalandırma ve fanlar, sayaç okuma, kamera ve aydınlatma testi","Control vizual panouri, cabluri și conectori DC, ventilație și ventilatoare, citire contor, test camere și iluminat"),S("Teknisyen","Tehnician")],
+ [S("Aylık","Lunar"),S("Ot kesimi, string kutuları, SPD göstergeleri, toz filtreleri, topraklama gözle kontrol, aylık üretim raporu","Tăiat iarba, cutii de string, indicatoare SPD, filtre de praf, control vizual legare la pământ, raport lunar de producție"),S("Teknisyen","Tehnician")],
+ [S("Üç aylık","Trimestrial"),S("Kablo bağlantıları termal kontrol, pano ve trafo odası detaylı temizlik, söndürücü kontrolü, güvenlik sistemi testi","Control termic conexiuni cabluri, curățenie detaliată tablouri și cameră transformator, verificare stingătoare, test sistem de securitate"),S("Teknisyen + yetkili elektrikçi","Tehnician + electrician autorizat")],
+ [S("Yıllık","Anual"),S("Hot spot taraması, string ölçümleri, yalıtım ve topraklama direnci, koruma rölesi testi, trafo yağ analizi, invertör servisi, panel temizliği, çit onarımı","Scanare puncte fierbinți, măsurători de string, rezistență de izolație și de legare la pământ, test relee, analiza uleiului, service invertoare, curățare panouri, reparat gard"),S("Yetkili firma / üretici servisi","Firmă autorizată / service producător")]
+];
+
+var UI={
+ app:S("Santral Kontrol Defteri","Registrul de control al parcului"),
+ pk:{sg:"Solaris Global SRL",ol:"Olba SRL"},
+ nav:{c:S("Kontrol","Control"),l:S("Liste","Listă"),o:S("Olaylar","Evenimente"),g:S("Bekçi","Paznic"),h:S("Geçmiş","Istoric")},
+ freq:{d:S("Günlük","Zilnic"),w:S("Haftalık","Săptămânal"),m:S("Aylık","Lunar"),y:S("Yıllık","Anual")},
+ today:S("Bugüne dön","Înapoi la azi"),
+ week:S("Hafta","Săptămâna"),
+ ok:S("Tamam","În regulă"),bad:S("Sorun var","Problemă"),left:S("Kalan","Rămase"),
+ okN:S("Tamam","În regulă"),badN:S("Sorun","Probleme"),
+ visitQ:S("Bugün sahada mıydın?","Ai fost azi în parc?"),
+ yes:S("Evet, sahadaydım","Da, am fost în parc"),no:S("Hayır, uzaktan baktım","Nu, am verificat de la distanță"),
+ remote:S("Uzaktan kontrol (telefon/izleme sistemi)","Verificare la distanță (telefon/monitorizare)"),
+ onsite:S("Sahada kontrol","Verificare în parc"),
+ noVisit:S("Bugün sahaya gidilmediği için bu kısım sayılmıyor.","Azi nu s-a mers în parc, această parte nu se numără."),
+ askVisit:S("Sahada olduysan yukarıdan “Evet” seç, yoksa bu kısım gizli kalır.","Dacă ai fost în parc, alege „Da” mai sus; altfel partea aceasta rămâne ascunsă."),
+ repIssue:S("Olay kaydı aç","Deschide un eveniment"),
+ note:S("Not","Notă"),notePh:S("Gördüğün sorunlar, yapılan işler…","Probleme observate, lucrări efectuate…"),
+ who:S("Adın","Numele tău"),
+ sign:S("İmzala ve bitir","Semnează și încheie"),signed:S("İmzalandı","Semnat"),
+ saving:S("Kaydediliyor…","Se salvează…"),saved:S("Kaydedildi","Salvat"),fail:S("Kaydedilemedi, tekrar dene","Nu s-a putut salva, încearcă din nou"),
+ local:S("Bu sayfada kalır, paylaşılmıyor","Rămâne doar pe această pagină, nu se partajează"),
+ ro:S("Bu hesapla yalnızca görüntüleyebilirsin.","Cu acest cont poți doar vizualiza."),
+ nodb:S("Kayıt servisi açılamadı. İşaretler başkalarına gitmez.","Serviciul de salvare nu a pornit. Marcajele nu ajung la alții."),
+ openInc:S("açık olay","evenimente deschise"),tapSee:S("Görmek için dokun","Atinge pentru detalii"),
+ newInc:S("Olay bildir","Raportează un eveniment"),
+ whatHappened:S("Ne oldu?","Ce s-a întâmplat?"),
+ whoSays:S("Kim bildiriyor?","Cine raportează?"),guard:S("Bekçi","Paznic"),tech:S("Teknisyen","Tehnician"),
+ place:S("Yer (sıra no, invertör no, pano…)","Locul (rând, invertor, tablou…)"),
+ started:S("Ne zaman başladı?","Când a început?"),
+ kwh:S("Tahmini kayıp (kWh, biliyorsan)","Pierdere estimată (kWh, dacă știi)"),
+ desc:S("Kısaca anlat","Descrie pe scurt"),
+ send:S("Olayı gönder","Trimite evenimentul"),
+ doNow:S("Şimdi yap","Fă acum"),callWho:S("Kime haber ver","Pe cine anunți"),
+ close:S("Kapat","Închide"),reopen:S("Yeniden aç","Redeschide"),
+ stOpen:S("Açık","Deschis"),stClosed:S("Kapalı","Închis"),
+ photoAdd:S("Fotoğraf ekle","Adaugă fotografie"),photoMax:S("En fazla 3 fotoğraf","Maximum 3 fotografii"),photoDel:S("Sil","Șterge"),photoFail:S("Fotoğraf eklenemedi.","Fotografia nu a putut fi adăugată."),
+ visitNone:S("Henüz saha ziyareti kaydı yok.","Încă nu există vizite înregistrate."),visitToday:S("Son saha ziyareti: bugün","Ultima vizită în parc: azi"),visitAgo:S("Son saha ziyareti: ","Ultima vizită în parc: "),visitDays:S(" gün önce"," zile în urmă"),
+ noInc:S("Henüz olay kaydı yok.","Nu există evenimente.") ,
+ reportedBy:S("Bildiren","Raportat de"),
+ guardHead:S("Bir şey mi oldu?","S-a întâmplat ceva?"),
+ guardBtn:S("OLAY BİLDİR","RAPORTEAZĂ"),
+ guardHelp:S("Yangın, hırsızlık, elektrik sorunu: önce sorumluyu ara, sonra buradan kaydet.","Incendiu, furt, problemă electrică: sună întâi responsabilul, apoi înregistrează aici."),
+ guardRound:S("Bekçi turu","Tura paznicului"),
+ contacts:S("Aranacak numaralar","Numere de apelat"),
+ contactsEdit:S("Numaraları düzenle","Editează numerele"),
+ contactsPh:S("Sorumlu: …\nTeknisyen: …\nŞebeke işletmecisi: …","Responsabil: …\nTehnician: …\nOperator rețea: …"),
+ contactsEmpty:S("Numara eklenmemiş. Yönetici ekleyebilir.","Nu sunt numere. Administratorul le poate adăuga."),
+ save:S("Kaydet","Salvează"),
+ emergency:S("Acil durumda: 112","Urgențe: 112"),
+ hist:S("Son kayıtlar","Ultimele înregistrări"),noHist:S("Bu park için kayıt yok.","Nu există înregistrări pentru acest parc."),
+ items:S("madde","puncte"),
+ lsub:{items:S("Maddeler","Puncte"),info:S("Park bilgisi","Date parc"),rules:S("Kurallar","Reguli")},
+ listIntro:S("Tüm kontroller sistem sistem. Rozet sıklığı gösterir (G günlük, H haftalık, A aylık, Y yıllık). İşaret, üstteki tarihe denk gelen dönem için kaydedilir.","Toate verificările pe sisteme. Insigna arată frecvența (Z zilnic, S săptămânal, L lunar, A anual). Marcajul se salvează pentru perioada de la data de sus."),
+ infoNote:S("Bu bilgiler 16.01.2023 tarihli projeden alındı. Sahadaki gerçek durumla karşılaştır ve farkları forma yaz. Olba da aynı yapıda.","Informațiile provin din proiectul din 16.01.2023. Compară-le cu situația reală din parc și notează diferențele. Olba are aceeași structură."),
+ thermT:S("Termal tarama bulguları (02.07.2025)","Constatări scanare termică (02.07.2025)"),
+ thermB:S("3DATA COLLECT'in dronla yaptığı taramada anormal sıcak bölgeler görüldü: bir sırada paneller komşularından belirgin sıcak (rapora göre invertör veya string arızası olabilir) ve ayrı bir kesitte anormal ısınma. Rapor park, sıra veya invertör numarası vermiyor. Panel akım vermiyorsa ısınır, yani üretim kaybı olabilir. Yapılacak: sıra ve invertörü öğren, string akımlarını komşularla karşılaştır, konnektör, sigorta ve DDCC bağlantılarını yetkili kişiyle kontrol et, onarımdan sonra yeniden tara.","Scanarea cu drona făcută de 3DATA COLLECT a arătat zone anormal de calde: într-un rând panourile sunt mult mai calde decât vecinele (conform raportului, posibil defect la invertor sau string) și o altă zonă cu încălzire anormală. Raportul nu indică parcul, rândul sau invertorul. Un panou care nu livrează curent se încălzește, deci poate fi pierdere de producție. De făcut: află rândul și invertorul, compară curenții de string cu vecinii, verifică conectorii, siguranțele și conexiunile DDCC împreună cu o persoană autorizată, scanează din nou după reparație."),
+ revT:S("Gelir ve dengeleme","Venit și echilibrare"),
+ revB:S("Üretilen enerji şebekeye verilir ve karşılığı ödenir. Moldelectrica ile 20.05.2024 tarihli 245 pre sayılı dengeleme sözleşmesine göre Solaris Global dengeleme sorumlusudur: bildirilen üretimle ölçülen üretim arasındaki fark şirkete mali yük olur.","Energia produsă este livrată în rețea și plătită. Conform contractului de echilibrare nr. 245 pre din 20.05.2024 cu Moldelectrica, Solaris Global este parte responsabilă pentru echilibrare: diferența dintre producția notificată și cea măsurată devine sarcină financiară pentru firmă."),
+ revL:[S("Planlanandan az üretim, referans fiyatın en az 1,2 katından ödenir; fazla üretim en çok 0,6 katından alacak yazılır. Referans, ertesi gün Ukrayna piyasası kapanış fiyatıdır.","Producția sub plan se plătește la cel puțin 1,2 × prețul de referință; surplusul se încasează la cel mult 0,6 ×. Referința este prețul de închidere din ziua următoare al pieței din Ucraina."),
+  S("Üretim durduğunda ilk 15 dakika içinde sorumluya haber ver. Olay raporuna başlangıç saati, tahmini kayıp kWh ve tekrar devreye girme saatini yaz.","Când producția se oprește, anunță responsabilul în primele 15 minute. În raport notează ora de început, kWh pierduți estimați și ora repornirii."),
+  S("Fırtına, dolu, hat arızası gibi olaylarda mücbir sebep için en geç 3 takvim günü içinde yazılı bildirim gerekir; fotoğraf ve saatleri aynı gün ilet.","La furtună, grindină, defect de linie, pentru forță majoră este nevoie de notificare scrisă în cel mult 3 zile calendaristice; trimite fotografiile și orele în aceeași zi."),
+  S("Aylık dengeleme faturası 7 banka günü içinde ödenir, gecikmeye günlük %0,05 ceza işler. İtiraz için 5 iş günü içinde yazılı not gerekir. Duruş saatleri ve sayaç değerleri itirazda tek dayanaktır.","Factura lunară de echilibrare se plătește în 7 zile bancare; întârzierea are penalitate de 0,05% pe zi. Contestația cere notă scrisă în 5 zile lucrătoare. Orele de oprire și valorile contorului sunt singura bază în contestații."),
+  S("Sözleşme metnine göre geçerlilik 01.06.2025'te bitiyor ve karşılıklı anlaşmayla uzatılabiliyor. Uzatma belgesini yönetici teyit etmeli.","Conform textului, valabilitatea expiră la 01.06.2025 și se poate prelungi prin acord. Administratorul trebuie să confirme prelungirea.")],
+ calT:S("Bakım takvimi","Calendar de mentenanță"),
+ calWho:S("Kim yapar","Cine face")
+};
+
+/* ---------- state ---------- */
+var FIXED_PARK="ol";
+var lang="tr",park=FIXED_PARK,tab="c",freq="d",date=iso(new Date());
+try{lang=localStorage.getItem("sk.lang")||"tr"}catch(e){}
+var logs=new Map(),pend=new Map(),incs=[],contacts="";
+var db=null,canWrite=true,saveState="",statusTimer=null,deferred=false;
+var incForm={type:"",place:"",kwh:"",desc:"",src:"tech",at:"",photos:[]};var photoCache=new Map();
+
+var L=function(o){return o[lang]};
+var app=document.getElementById("app");
+
+/* ---------- data ---------- */
+function docId(f,k){return park+"__"+f+"__"+k}
+function blank(f,k){return {park:park,freq:f,key:k,items:{},note:"",visited:"",signedName:"",signedAt:0,updatedAt:0}}
+function getDoc(f,k){var id=docId(f,k);var p=pend.get(id);return (p&&p.doc)||logs.get(id)||blank(f,k)}
+function itemsFor(f){return ITEMS.filter(function(i){return i.f===f&&(!i.p||i.p===park)})}
+function setStatus(s){saveState=s;clearTimeout(statusTimer);paintStatus();if(s==="saved")statusTimer=setTimeout(function(){saveState="";paintStatus()},1800)}
+function paintStatus(){var s=document.getElementById("status");if(!s)return;s.textContent="";if(!saveState)return;s.append(el("span",{text:L(UI[saveState])}))}
+function edit(f,fn){
+  var k=keyFor(f,date),id=docId(f,k);
+  var base=JSON.parse(JSON.stringify(getDoc(f,k)));fn(base);
+  base.park=park;base.freq=f;base.key=k;base.updatedAt=Date.now();
+  var e=pend.get(id)||{v:0};e.doc=base;e.v++;pend.set(id,e);
+  clearTimeout(e.t);e.t=setTimeout(function(){flush(id)},450);
+  setStatus(db?"saving":"local");
+}
+async function flush(id){
+  var e=pend.get(id);if(!e||e.busy)return;
+  if(!db){return}
+  e.busy=true;var v=e.v;
+  try{await db.doc("logs/"+id).set(e.doc)}catch(err){e.busy=false;setStatus("fail");if(err&&err.code==="invalid_argument")canWrite=false;render();return}
+  e.busy=false;
+  if(e.v===v){logs.set(id,e.doc);pend.delete(id);setStatus("saved")}else flush(id);
+}
+function counts(f,d){
+  var its=itemsFor(f).filter(function(i){return f!=="d"||d.visited==="yes"||i.r});
+  var ok=0,bad=0;its.forEach(function(i){var s=d.items[i.id];if(s==="ok")ok++;else if(s==="issue")bad++});
+  return {total:its.length,ok:ok,bad:bad,left:its.length-ok-bad};
+}
+
+/* ---------- labels ---------- */
+function periodLabel(f,ds){
+  var d=parse(ds),loc=lang==="tr"?"tr-TR":"ro-RO";
+  if(f==="d"||f==="g")return {big:d.toLocaleDateString(loc,{weekday:"long",day:"numeric",month:"long"}),small:String(d.getFullYear())};
+  if(f==="w"){var w=isoWeek(d);return {big:L(UI.week)+" "+w[1],small:String(w[0])}}
+  if(f==="m")return {big:d.toLocaleDateString(loc,{month:"long"}),small:String(d.getFullYear())};
+  return {big:String(d.getFullYear()),small:""};
+}
+function typeOf(id){return TYPES.filter(function(t){return t.id===id})[0]||TYPES[TYPES.length-1]}
+function fmtTime(ms){if(!ms)return "";var d=new Date(ms),loc=lang==="tr"?"tr-TR":"ro-RO";return d.toLocaleString(loc,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+
+/* ---------- views ---------- */
+function header(){
+  return el("header",{class:"bleed"},
+    el("div",{class:"wrap"},
+      el("div",{class:"top"},
+        el("div",{class:"brand"},el("small",{text:L(UI.app)}),el("b",{text:UI.pk[park]})),
+        el("div",{class:"lang",role:"group","aria-label":"Language"},
+          ["tr","ro"].map(function(c){return el("button",{type:"button","aria-pressed":String(lang===c),text:c.toUpperCase(),onclick:function(){lang=c;try{localStorage.setItem("sk.lang",c)}catch(e){}render()}})})))));
+}
+function openIncs(){return incs.filter(function(i){return i.status!=="closed"})}
+function alertBanner(){
+  var o=openIncs();if(!o.length||tab==="o")return null;
+  return el("button",{class:"alert",type:"button",onclick:function(){tab="o";render();window.scrollTo(0,0)}},
+    el("span",{html:null,text:"⚠"}),
+    el("span",null,o.length+" "+L(UI.openInc),el("small",{text:L(UI.tapSee)})));
+}
+function notices(){
+  var a=[];
+  if(!db)a.push(el("div",{class:"note-banner",text:L(UI.nodb)}));
+  else if(!canWrite)a.push(el("div",{class:"note-banner",text:L(UI.ro)}));
+  return a;
+}
+function itemRow(it,d,badge){
+  var st=d.items[it.id]||"";
+  return el("div",{class:"item "+st},
+    badge?el("div",{class:"hd"},el("span",{class:"badge",text:FBADGE[lang][it.f],title:L(UI.freq[it.f])}),el("p",{text:it[lang]})):el("p",{text:it[lang]}),
+    el("div",{class:"act"},
+      el("button",{class:"yes",type:"button","aria-pressed":String(st==="ok"),disabled:!canWrite||null,onclick:function(){edit(it.f,function(x){if(x.items[it.id]==="ok")delete x.items[it.id];else x.items[it.id]="ok"});renderBody()}},el("span",{class:"ic",html:SVG.check}),L(UI.ok)),
+      el("button",{class:"no",type:"button","aria-pressed":String(st==="issue"),disabled:!canWrite||null,onclick:function(){edit(it.f,function(x){if(x.items[it.id]==="issue")delete x.items[it.id];else x.items[it.id]="issue"});renderBody()}},el("span",{class:"ic",html:SVG.warn}),L(UI.bad))),
+    st==="issue"?el("button",{class:"rep",type:"button",text:"→ "+L(UI.repIssue),onclick:function(){incForm.desc=it[lang];incForm.src="tech";tab="o";render();window.scrollTo(0,0)}}):null);
+}
+function sections(its,d){
+  var out=[];
+  ORDER.forEach(function(s){
+    var list=its.filter(function(i){return i.s===s});if(!list.length)return;
+    out.push(el("section",{class:"sec"},el("h3",{text:L(SEC[s])+(s==="sg"?"":"")}),list.map(function(i){return itemRow(i,d)})));
+  });
+  return out;
+}
+function meter(c){
+  var tot=Math.max(c.total,1);
+  return el("div",{class:"meter"},
+    el("div",{class:"row"},
+      el("span",null,el("i",{class:"dot",style:"background:var(--ok)"}),L(UI.okN)+" "+c.ok),
+      el("span",null,el("i",{class:"dot",style:"background:var(--bad)"}),L(UI.badN)+" "+c.bad),
+      el("span",null,el("i",{class:"dot",style:"background:var(--line)"}),L(UI.left)+" "+c.left)),
+    el("div",{class:"bar"},el("i",{style:"width:"+(100*c.ok/tot)+"%;background:var(--ok)"}),el("i",{style:"width:"+(100*c.bad/tot)+"%;background:var(--bad)"})));
+}
+function noteAndSign(d){
+  var wrap=el("div",{class:"card"});
+  var note=el("textarea",{id:"note",placeholder:L(UI.notePh),value:d.note||"",disabled:!canWrite||null,oninput:function(e){var v=e.target.value;edit(freq,function(x){x.note=v})}});
+  var who=el("input",{id:"who",type:"text",placeholder:L(UI.who),value:d.signedName||"",disabled:!canWrite||null,autocomplete:"name"});
+  var btn=el("button",{class:"primary",type:"button",disabled:!canWrite||null,text:L(UI.sign),onclick:function(){
+    var n=who.value.trim();if(!n){who.focus();return}
+    edit(freq,function(x){x.signedName=n;x.signedAt=Date.now()});renderBody()}});
+  wrap.append(el("label",null,L(UI.note),note),el("label",null,L(UI.who),who));
+  if(d.signedAt)wrap.append(el("div",{class:"signed",text:"✓ "+L(UI.signed)+": "+d.signedName+" · "+fmtTime(d.signedAt)}));
+  wrap.append(btn);
+  return wrap;
+}
+function controlView(){
+  var k=keyFor(freq,date),d=getDoc(freq,k),pl=periodLabel(freq,date),out=[];
+  var vb=visitBanner();if(vb)out.push(vb);
+  out.push(el("div",{class:"seg",role:"group"},["d","w","m","y"].map(function(f){return el("button",{type:"button","aria-pressed":String(freq===f),text:L(UI.freq[f]),onclick:function(){freq=f;render()}})})));
+  out.push(el("div",{class:"datebar"},
+    el("button",{type:"button","aria-label":"‹",text:"‹",onclick:function(){date=shift(freq,date,-1);render()}}),
+    el("div",{class:"now"},el("b",{text:pl.big}),pl.small?el("span",{text:pl.small}):null),
+    el("button",{type:"button","aria-label":"›",text:"›",onclick:function(){date=shift(freq,date,1);render()}})));
+  if(keyFor(freq,date)!==keyFor(freq,iso(new Date())))out.push(el("button",{class:"today",type:"button",text:L(UI.today),onclick:function(){date=iso(new Date());render()}}));
+  var its=itemsFor(freq);
+  if(freq==="d"){
+    out.push(el("div",{class:"visit"},el("h3",{text:L(UI.visitQ)}),
+      el("div",{class:"two"},
+        el("button",{class:"big",type:"button","aria-pressed":String(d.visited==="yes"),disabled:!canWrite||null,text:L(UI.yes),onclick:function(){edit("d",function(x){x.visited=x.visited==="yes"?"":"yes"});renderBody()}}),
+        el("button",{class:"big",type:"button","aria-pressed":String(d.visited==="no"),disabled:!canWrite||null,text:L(UI.no),onclick:function(){edit("d",function(x){x.visited=x.visited==="no"?"":"no"});renderBody()}}))));
+  }
+  out.push(meter(counts(freq,d)));
+  if(freq==="d"){
+    var rem=its.filter(function(i){return i.r}),on=its.filter(function(i){return !i.r});
+    out.push(el("h3",{class:"sec",text:L(UI.remote),style:"margin:6px 0 0;font-size:19px;color:var(--ink)"}));
+    sections(rem,d).forEach(function(n){out.push(n)});
+    out.push(el("h3",{class:"sec",text:L(UI.onsite),style:"margin:14px 0 0;font-size:19px;color:var(--ink)"}));
+    if(d.visited==="yes")sections(on,d).forEach(function(n){out.push(n)});
+    else out.push(el("div",{class:"note-banner",text:d.visited==="no"?L(UI.noVisit):L(UI.askVisit)}));
+  } else sections(its,d).forEach(function(n){out.push(n)});
+  out.push(noteAndSign(d));
+  return out;
+}
+
+var lsub="items";
+function listView(){
+  var out=[el("div",{class:"seg",role:"group"},["items","info","rules"].map(function(k){return el("button",{type:"button","aria-pressed":String(lsub===k),text:L(UI.lsub[k]),onclick:function(){lsub=k;render();window.scrollTo(0,0)}})}))];
+  if(lsub==="items"){
+    var pl=periodLabel("d",date);
+    out.push(el("div",{class:"datebar"},
+      el("button",{type:"button",text:"‹",onclick:function(){date=shift("d",date,-1);render()}}),
+      el("div",{class:"now"},el("b",{text:pl.big}),el("span",{text:pl.small})),
+      el("button",{type:"button",text:"›",onclick:function(){date=shift("d",date,1);render()}})));
+    out.push(el("div",{class:"note-banner",text:L(UI.listIntro)}));
+    ORDER.forEach(function(s,idx){
+      var its=ITEMS.filter(function(i){return i.s===s&&i.f!=="g"&&(!i.p||i.p===park)});if(!its.length)return;
+      var order={d:0,w:1,m:2,y:3};its.sort(function(a,b){return order[a.f]-order[b.f]});
+      var done=0;its.forEach(function(i){if(getDoc(i.f,keyFor(i.f,date)).items[i.id]==="ok")done++});
+      var sec=el("section",{class:"sec"},
+        el("h3",{text:(idx+1)+". "+L(SEC[s])+"  ·  "+done+"/"+its.length}));
+      if(SECNOTE[s])sec.append(el("div",{class:"secnote",text:L(SECNOTE[s])}));
+      its.forEach(function(i){sec.append(itemRow(i,getDoc(i.f,keyFor(i.f,date)),true))});
+      out.push(sec);
+    });
+  } else if(lsub==="info"){
+    out.push(el("div",{class:"note-banner",text:L(UI.infoNote)}));
+    out.push(el("div",{class:"kv"},INFO.map(function(r){return el("div",null,el("b",{text:L(r[0])}),el("span",{text:L(r[1]),style:"font-weight:600"}))})));
+    out.push(el("div",{class:"card"},el("h3",{text:L(UI.thermT),style:"color:var(--ink)"}),el("p",{text:L(UI.thermB)})));
+  } else {
+    out.push(el("div",{class:"card"},el("h3",{text:L(UI.calT),style:"color:var(--ink)"}),el("div",{class:"cal"},CAL.map(function(r){return el("div",null,el("b",{text:L(r[0])}),el("span",{text:L(r[1])}),el("span",{class:"tag",text:L(UI.calWho)+": "+L(r[2])}))}))));
+  }
+  return out;
+}
+
+function shrinkPhoto(file){return new Promise(function(res,rej){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){URL.revokeObjectURL(u);var m=1000,w=im.naturalWidth,h=im.naturalHeight,r=Math.min(1,m/Math.max(w,h));var c=document.createElement("canvas");c.width=Math.round(w*r);c.height=Math.round(h*r);c.getContext("2d").drawImage(im,0,0,c.width,c.height);var q=.62,out=c.toDataURL("image/jpeg",q);while(out.length>170000&&q>.3){q-=.1;out=c.toDataURL("image/jpeg",q)}if(out.length>200000)rej(new Error("big"));else res(out)};im.onerror=function(){URL.revokeObjectURL(u);rej(new Error("img"))};im.src=u})}
+function openPhoto(src){var o=el("div",{style:"position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.88);display:grid;place-items:center;padding:12px",onclick:function(){o.remove()}},el("img",{src:src,style:"max-width:100%;max-height:100%;border-radius:12px"}));document.body.append(o)}
+function photoThumb(id){var im=el("img",{alt:"",style:"width:96px;height:96px;object-fit:cover;border-radius:12px;background:var(--line);cursor:pointer"});
+  function put(src){im.src=src;im.onclick=function(){openPhoto(src)}}
+  if(photoCache.has(id))put(photoCache.get(id));else if(db)db.doc("photos/"+id).get().then(function(s){if(s.exists){var d=s.data().data;photoCache.set(id,d);put(d)}}).catch(function(){});
+  return im}
+function lastVisit(){var best="";logs.forEach(function(v){if(v.park===park&&v.freq==="d"&&v.visited==="yes"&&v.key>best)best=v.key});return best}
+function visitBanner(){
+  var k=lastVisit(),msg,bad=false,warn=false;
+  if(!k){if(!db)return null;msg=L(UI.visitNone);warn=true}
+  else{var n=Math.floor((parse(iso(new Date()))-parse(k))/864e5);if(n<=0)msg=L(UI.visitToday);else{msg=L(UI.visitAgo)+n+L(UI.visitDays);if(n>=4)bad=true;else if(n>=3)warn=true}}
+  return el("div",{class:"visitbar "+(bad?"bad":warn?"warn":"ok"),text:msg})}
+function incidentView(){
+  var out=[];
+  var f=incForm,t=f.type?typeOf(f.type):null;
+  var card=el("div",{class:"card"},el("h3",{text:L(UI.newInc)}));
+  card.append(el("label",null,L(UI.whoSays),el("div",{class:"two"},
+    ["guard","tech"].map(function(s){return el("button",{class:"big",type:"button","aria-pressed":String(f.src===s),text:L(UI[s]),onclick:function(){f.src=s;renderBody()}})}))));
+  card.append(el("label",null,L(UI.whatHappened),el("div",{class:"types"},TYPES.map(function(ty){return el("button",{type:"button","aria-pressed":String(f.type===ty.id),text:ty[lang],onclick:function(){f.type=ty.id;renderBody()}})}))));
+  if(t)card.append(el("div",{class:"hint"},el("span",null,el("b",{text:L(UI.doNow)+": "}),L(t.do)),el("span",null,el("b",{text:L(UI.callWho)+": "}),L(t.who))));
+  card.append(el("label",null,L(UI.place),el("input",{id:"f-place",type:"text",value:f.place,oninput:function(e){f.place=e.target.value}})));
+  if(!f.at){var n=new Date();f.at=n.getFullYear()+"-"+pad(n.getMonth()+1)+"-"+pad(n.getDate())+"T"+pad(n.getHours())+":"+pad(n.getMinutes())}
+  card.append(el("label",null,L(UI.started),el("input",{id:"f-at",type:"datetime-local",value:f.at,oninput:function(e){f.at=e.target.value}})));
+  card.append(el("label",null,L(UI.desc),el("textarea",{id:"f-desc",value:f.desc,oninput:function(e){f.desc=e.target.value}})));
+  var ph=el("div",{class:"photos"});
+  f.photos.forEach(function(src,ix){ph.append(el("div",{class:"ph"},el("img",{src:src,onclick:function(){openPhoto(src)}}),el("button",{type:"button","aria-label":L(UI.photoDel),text:"×",onclick:function(){f.photos.splice(ix,1);renderBody()}})))});
+  var fi=el("input",{type:"file",accept:"image/*",style:"display:none",onchange:async function(e){var fl=e.target.files&&e.target.files[0];e.target.value="";if(!fl||f.photos.length>=3)return;try{f.photos.push(await shrinkPhoto(fl));renderBody()}catch(x){setStatus("fail")}}});
+  card.append(el("div",{class:"photobox"},el("button",{class:"big",type:"button",disabled:f.photos.length>=3||null,text:"📷 "+L(UI.photoAdd)+" ("+f.photos.length+"/3)",onclick:function(){fi.click()}}),fi,ph));
+  card.append(el("button",{class:"primary danger",type:"button",disabled:(!f.type||!canWrite||!db)||null,text:L(UI.send),onclick:submitInc}));
+  out.push(card);
+  var list=incs.filter(function(i){return !i.park||i.park===park});
+  if(!list.length)out.push(el("div",{class:"empty",text:L(UI.noInc)}));
+  list.forEach(function(i){
+    var ty=typeOf(i.type),open=i.status!=="closed";
+    out.push(el("div",{class:"inc "+(open?"open":"")},
+      el("div",{style:"display:flex;justify-content:space-between;gap:8px;align-items:center"},
+        el("h4",{text:ty[lang]}),el("span",{class:"pill "+(open?"open":"closed"),text:open?L(UI.stOpen):L(UI.stClosed)})),
+      el("div",{class:"tag",text:fmtTime(Date.parse(i.at)||i.createdAt)+" · "+L(UI.reportedBy)+": "+(i.src==="guard"?L(UI.guard):L(UI.tech))}),
+      i.place?el("div",{text:i.place,style:"font-weight:700"}):null,
+      i.desc?el("div",{text:i.desc}):null,
+      (i.photoIds&&i.photoIds.length)?el("div",{class:"photos"},i.photoIds.map(photoThumb)):null,
+      el("button",{class:"big",type:"button",disabled:!canWrite||null,text:open?L(UI.close):L(UI.reopen),onclick:function(){setIncStatus(i,open?"closed":"open")}})));
+  });
+  return out;
+}
+async function submitInc(){
+  var f=incForm;if(!db||!f.type)return;
+  try{
+    var pids=[];for(var pi=0;pi<f.photos.length;pi++){var pr=await db.collection("photos").add({park:park,data:f.photos[pi],createdAt:Date.now()});photoCache.set(pr.id,f.photos[pi]);pids.push(pr.id)}
+    await db.collection("incidents").add({photoIds:pids,park:park,type:f.type,place:f.place.trim(),desc:f.desc.trim(),kwh:f.kwh?Number(f.kwh):0,at:new Date(f.at).toISOString(),src:f.src,status:"open",createdAt:Date.now()});
+    incForm={type:"",place:"",kwh:"",desc:"",src:f.src,at:"",photos:[]};setStatus("saved");render();window.scrollTo(0,0);
+  }catch(e){setStatus("fail")}
+}
+async function setIncStatus(i,st){
+  if(!db)return;
+  try{await db.doc("incidents/"+i.id).update({status:st,closedAt:st==="closed"?Date.now():0});setStatus("saved")}catch(e){setStatus("fail")}
+}
+function guardView(){
+  var out=[];
+  out.push(el("div",{class:"guard-top"},el("h2",{text:L(UI.guardHead)}),el("div",{text:L(UI.guardHelp),style:"font-weight:600"}),
+    el("button",{type:"button",text:L(UI.guardBtn),onclick:function(){incForm.src="guard";tab="o";render();window.scrollTo(0,0)}}),
+    el("div",{text:L(UI.emergency),style:"font-weight:900;font-size:20px"})));
+  var k=keyFor("g",date),d=getDoc("g",k),its=itemsFor("g");
+  out.push(el("div",{class:"datebar"},
+    el("button",{type:"button",text:"‹",onclick:function(){date=shift("g",date,-1);render()}}),
+    el("div",{class:"now"},el("b",{text:periodLabel("g",date).big}),el("span",{text:periodLabel("g",date).small})),
+    el("button",{type:"button",text:"›",onclick:function(){date=shift("g",date,1);render()}})));
+  out.push(meter(counts("g",d)));
+  out.push(el("section",{class:"sec"},el("h3",{text:L(UI.guardRound)}),its.map(function(i){
+    var st=d.items[i.id]||"";
+    return el("div",{class:"item "+st},el("p",{text:i[lang]}),el("div",{class:"act"},
+      el("button",{class:"yes",type:"button","aria-pressed":String(st==="ok"),disabled:!canWrite||null,onclick:function(){edit("g",function(x){if(x.items[i.id]==="ok")delete x.items[i.id];else x.items[i.id]="ok"});renderBody()}},el("span",{class:"ic",html:SVG.check}),L(UI.ok)),
+      el("button",{class:"no",type:"button","aria-pressed":String(st==="issue"),disabled:!canWrite||null,onclick:function(){edit("g",function(x){if(x.items[i.id]==="issue")delete x.items[i.id];else x.items[i.id]="issue"});renderBody()}},el("span",{class:"ic",html:SVG.warn}),L(UI.bad))),
+      st==="issue"?el("button",{class:"rep",type:"button",text:"→ "+L(UI.repIssue),onclick:function(){incForm.desc=i[lang];incForm.src="guard";tab="o";render();window.scrollTo(0,0)}}):null);
+  })));
+  var card=el("div",{class:"card"},el("h3",{text:L(UI.contacts)}));
+  if(contacts.trim())card.append(el("div",{text:contacts,style:"white-space:pre-wrap;font-weight:700;font-size:19px"}));
+  else card.append(el("div",{text:L(UI.contactsEmpty),style:"color:var(--mute);font-weight:600"}));
+  var ta=el("textarea",{id:"contacts",placeholder:L(UI.contactsPh),value:contacts,disabled:!canWrite||!db||null});
+  card.append(el("label",null,L(UI.contactsEdit),ta),el("button",{class:"big",type:"button",disabled:(!canWrite||!db)||null,text:L(UI.save),onclick:async function(){
+    try{await db.doc("settings/contacts").set({text:ta.value});contacts=ta.value;setStatus("saved");renderBody()}catch(e){setStatus("fail")}}}));
+  out.push(card);
+  return out;
+}
+function histView(){
+  var out=[el("h3",{class:"sec",text:L(UI.hist),style:"margin:0;color:var(--mute)"})];
+  var rows=[];logs.forEach(function(v,id){if(v.park===park)rows.push(v)});
+  rows.sort(function(a,b){return (b.updatedAt||0)-(a.updatedAt||0)});
+  if(!rows.length)out.push(el("div",{class:"empty",text:L(UI.noHist)}));
+  rows.slice(0,60).forEach(function(v){
+    var c=counts(v.freq,v),title=v.freq==="g"?L(UI.guardRound):L(UI.freq[v.freq]);
+    var lab=(v.freq==="d"||v.freq==="g")?periodLabel("d",v.key).big+" "+v.key.slice(0,4):v.key;
+    out.push(el("div",{class:"hist"},
+      el("div",{class:"h1"},el("span",{text:title}),el("span",{class:"mono",text:lab})),
+      el("div",{class:"mono",text:"✓ "+c.ok+"   ! "+c.bad+"   · "+c.left+" / "+c.total}),
+      v.signedAt?el("div",{class:"tag",text:L(UI.signed)+": "+v.signedName+" · "+fmtTime(v.signedAt)}):null,
+      v.note?el("div",{text:v.note,style:"color:var(--mute)"}):null));
+  });
+  return out;
+}
+function navBar(){
+  var defs=[["c","list"],["l","book"],["o","bell"],["g","shield"],["h","clock"]];
+  return el("nav",null,defs.map(function(x){return el("button",{type:"button","aria-pressed":String(tab===x[0]),onclick:function(){tab=x[0];render();window.scrollTo(0,0)}},el("span",{html:SVG[x[1]],style:"display:block;width:26px;height:26px"}),el("span",{text:L(UI.nav[x[0]])}))}));
+}
+function mainContent(){
+  var out=[alertBanner()].concat(notices());
+  if(tab==="c")out=out.concat(controlView());
+  else if(tab==="l")out=out.concat(listView());
+  else if(tab==="o")out=out.concat(incidentView());
+  else if(tab==="g")out=out.concat(guardView());
+  else out=out.concat(histView());
+  return out;
+}
+function renderBody(){var m=document.getElementById("main");if(!m)return render();var y=window.scrollY;m.textContent="";mainContent().forEach(function(n){if(n)m.append(n)});window.scrollTo(0,y);paintStatus()}
+function render(){
+  var ae=document.activeElement;
+  if(ae&&/^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName)&&app.contains(ae)){deferred=true;return}
+  deferred=false;
+  document.documentElement.lang=lang;document.title=L(UI.app);
+  app.textContent="";
+  var holder=document.createDocumentFragment();
+  holder.append(header());
+  var m=el("main",{id:"main"});mainContent().forEach(function(n){if(n)m.append(n)});
+  holder.append(m,el("div",{class:"status",id:"status","aria-live":"polite"}),navBar());
+  app.append(holder);paintStatus();
+}
+document.addEventListener("focusout",function(){setTimeout(function(){var ae=document.activeElement;if(deferred&&!(ae&&/^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName)))render()},60)});
+
+/* ---------- start ---------- */
+render();
+(async function init(){
+  try{
+    var usr=await (window.claude&&claude.use?claude.use("user"):null);
+    if(usr){var cw=await usr.can("data.write");if(cw===false)canWrite=false}
+    db=await (window.claude&&claude.use?claude.use("db"):null);
+  }catch(e){db=null}
+  if(!db){render();return}
+  db.collection("logs").orderBy("updatedAt","desc").limit(500).onSnapshot(function(s){logs=new Map(s.docs.map(function(d){return [d.id,d.data()]}));render()},function(){});
+  db.collection("incidents").orderBy("createdAt","desc").limit(100).onSnapshot(function(s){incs=s.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o});render()},function(){});
+  db.doc("settings/contacts").onSnapshot(function(s){contacts=(s.exists&&s.data().text)||"";render()},function(){});
+  render();
+})();
+})();
+</script>
+
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});</script>
+</body></html>
